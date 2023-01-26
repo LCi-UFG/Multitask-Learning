@@ -284,16 +284,22 @@ class Statistics():
 
     def set_3SigmaStats(self,obs_y,pred_y) -> Tuple[np.array,np.array]:
         data_pred = pd.DataFrame(data={"y":obs_y,"pred":pred_y}) 
-        data_pred = data_pred.assign(Folds_error = abs(data_pred['pred'] - data_pred['y']))
+        data_pred = data_pred.assign(Folds_error = [abs(data_pred['pred'][i] - data_pred['y'][i]) for i in data_pred.index])
         error = data_pred['Folds_error'].values
-        data_pred['3*sigma'] = 3*np.std(error)
+        error_per_line = [np.std([err,np.std(error)])*3 for err in error]
+
+        print("Mean error: ",np.mean(error),end="\n\n")
+        print("Average std error: ",np.std(error),end="\n\n")
+        data_pred['3*sigma'] = error_per_line
+        #print(error_per_line, end="\n\n")
+        #data_pred['3*sigma'] = 
         #keep only the ones that are within +3 to -3 standard deviations.
         #Dum dum way to get rid of outliers
         drop_list = []
         for i in data_pred.index:
             if abs(data_pred['Folds_error'][i]) <= abs(data_pred['3*sigma'][i]):
                 drop_list.append(i)
-        print("Drop list size: ",len(drop_list))
+        print("Drop list size: ",len(drop_list),end="\n\n")
         data_pred.drop(drop_list,axis=0,errors='ignore',inplace=True) 
         pred_y = data_pred['pred'].values
         obs_y = data_pred['y'].values
@@ -535,12 +541,13 @@ class ML_Helper(Statistics):
                 
                 if self.model_type == self.Regression:
                     y_pred = model.predict(X_data[i])
-                    text,(_,_,_) = self.calc_RegressionStatistics(pred_y=y_pred,obs_y=y_data[i])
+                    text,(_,_,_) = self.calc_RegressionStatistics(obs_y=y_data[i],pred_y=y_pred)
                     print("Before 3 Sigma:\n",text,end="\n\n")
-
+                    
+                    print("After 3 Sigma:\n")
                     y_data[i], y_pred = self.set_3SigmaStats(obs_y=y_data[i],pred_y=y_pred)
-                    text,(_,_,_) = self.calc_RegressionStatistics(pred_y=y_pred,obs_y=y_data[i])
-                    print("After 3 Sigma:\n",text)
+                    text,(_,_,_) = self.calc_RegressionStatistics(obs_y=y_data[i],pred_y=y_pred)
+                    print(text,end="\n\n")
 
                 elif self.model_type == self.Classification:
                     
