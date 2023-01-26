@@ -7,7 +7,9 @@ from rdkit.Chem import DataStructs
 from rdkit.Chem import rdMolDescriptors
 from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
 import itertools
-
+import lightgbm as lgb
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 from rdkit.Chem import rdDepictor
 rdDepictor.SetPreferCoordGen(True)
 from rdkit.Chem.Draw import rdMolDraw2D
@@ -44,6 +46,10 @@ class GLOBALS():
     REGRESSION: int = 1
     SCAFFOLD_SPLIT: int = 0
     RANDOM_SPLIT: int = 1
+    ML_MODELS = ['LGBM','RF','SVM']
+    LGBM = ML_MODELS[0]
+    RF = ML_MODELS[1]
+    SVM = ML_MODELS[2]
 
 class Commons():
     def __init__(self):
@@ -549,4 +555,97 @@ class ML_Helper(Statistics):
         else:
             raise Exception("X and y data must be equal in length")
     
-    
+class Model_Generator(Statistics):
+        def __init__(self,):
+                super().__init__()
+        LGBM = GLOBALS.LGBM
+        RF = GLOBALS.RF
+        SVM = GLOBALS.SVM
+        Models: dict = {
+        "LGBM":{
+            "classifier":lgb.LGBMClassifier(),                   
+            "params":{
+                'learning_rate': (0.01, 0.1, 'uniform'), 
+                'num_leaves': (1, 15),
+                'n_estimators': (2, 50), 
+                'max_depth': (1, 10),
+                'subsample': (0.1, 0.3), 
+            },
+        },
+        "RF":{
+            "classifier":RandomForestClassifier(),
+            "params":{
+            'max_features': ['auto', 'sqrt'],
+            'n_estimators': [2, 150],
+            "max_depth": [2, 10],
+            },
+        },
+        "SVM":{
+            "classifier":SVC(),
+            "params":{
+                'C': (0.01, 10.0, 'log-uniform'),
+                #'gamma': (0.01, 1.0, 'log-uniform'),
+                'degree': (1, 8),
+                'kernel': ['linear', 'poly', 'rbf', 'sigmoid'],
+            },
+        },
+        "Dense":T.keras.models.Sequential([
+            T.keras.layers.Dense(64,activation="relu"),
+            T.keras.layers.Dense(64,activation="relu"),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "LSTM":T.keras.models.Sequential([
+            T.keras.layers.LSTM(64,activation="relu",return_sequences=True),
+            T.keras.layers.LSTM(64,activation="relu"),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "GRU":T.keras.models.Sequential([
+            T.keras.layers.GRU(64,activation="relu",return_sequences=True),
+            T.keras.layers.GRU(64,activation="relu"),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "Conv1D":T.keras.models.Sequential([
+            T.keras.layers.Conv1D(64,3,activation="relu"),
+            T.keras.layers.MaxPool1D(3),
+            T.keras.layers.Conv1D(64,3,activation="relu"),
+            T.keras.layers.MaxPool1D(3),
+            T.keras.layers.Flatten(),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "Conv2D":T.keras.models.Sequential([
+            T.keras.layers.Conv2D(64,3,activation="relu"),
+            T.keras.layers.MaxPool2D(3),
+            T.keras.layers.Conv2D(64,3,activation="relu"),
+            T.keras.layers.MaxPool2D(3),
+            T.keras.layers.Flatten(),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "Conv3D":T.keras.models.Sequential([
+            T.keras.layers.Conv3D(64,3,activation="relu"),
+            T.keras.layers.MaxPool3D(3),
+            T.keras.layers.Conv3D(64,3,activation="relu"),
+            T.keras.layers.MaxPool3D(3),
+            T.keras.layers.Flatten(),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "RNN":T.keras.models.Sequential([
+            T.keras.layers.SimpleRNN(64,activation="relu",return_sequences=True),
+            T.keras.layers.SimpleRNN(64,activation="relu"),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "Bidirectional":T.keras.models.Sequential([
+            T.keras.layers.Bidirectional(T.keras.layers.LSTM(64,activation="relu",return_sequences=True)),
+            T.keras.layers.Bidirectional(T.keras.layers.LSTM(64,activation="relu")),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "TimeDistributed":T.keras.models.Sequential([
+            T.keras.layers.TimeDistributed(T.keras.layers.Dense(64,activation="relu")),
+            T.keras.layers.TimeDistributed(T.keras.layers.Dense(64,activation="relu")),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        "Attention":T.keras.models.Sequential([
+            T.keras.layers.Attention(),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
+        
+    }
