@@ -2,5 +2,7 @@
 .gitattributes
 .ipynb_checkpoints
 .profraw
-.\utils\__pycache__
+./utils/__pycache__
 *.png
+./chemprop
+
