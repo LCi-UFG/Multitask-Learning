@@ -96,6 +96,7 @@ class Commons():
         descs = np.asarray(descs, dtype=np.float32)
         return descs
     
+    # function to calculate the similarity between two molecules
 class Shap_Helper():
     def __init__(self):
         pass
@@ -601,4 +602,15 @@ class Model_Generator(Statistics):
             T.keras.layers.Dense(64,activation="relu"),
             T.keras.layers.Dense(1,activation="sigmoid")
         ]),
+        "CNN":T.keras.models.Sequential([
+            T.keras.layers.Conv1D(64,3,activation="relu"),
+            T.keras.layers.MaxPooling1D(3),
+            T.keras.layers.Conv1D(64,3,activation="relu"),
+            T.keras.layers.MaxPooling1D(3),
+            T.keras.layers.Conv1D(64,3,activation="relu"),
+            T.keras.layers.GlobalMaxPooling1D(),
+            T.keras.layers.Dense(64,activation="relu"),
+            T.keras.layers.Dense(1,activation="sigmoid")
+        ]),
     }
+        
